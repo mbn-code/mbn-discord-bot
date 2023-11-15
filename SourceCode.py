@@ -9,6 +9,7 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 user_credits = {}
 
+LOGGING_CHANNEL_ID = 798938315582734346
 LOGGING_CHANNEL_NAME = 'logging'
 
 MUTED_ROLE_NAME = 'Muted'
@@ -33,89 +34,224 @@ async def on_message(message):
     
     await bot.process_commands(message)
 
-@bot.event
-async def on_message_delete(message):
-    # Log deleted messages in the specified channel
-    log_channel_id = await get_logging_channel(message.guild)
-    if log_channel_id:
-        log_channel = bot.get_channel(log_channel_id)
-        if log_channel:
-            await log_channel.send(f'**Message from {message.author} deleted:** {message.content}')
 
 @bot.event
 async def on_message_edit(before, after):
-    # Log edited messages in the specified channel
-    log_channel_id = await get_logging_channel(before.guild)
-    if log_channel_id:
-        log_channel = bot.get_channel(log_channel_id)
-        if log_channel:
-            await log_channel.send(f'**Message from {before.author} edited:**\nBefore: {before.content}\nAfter: {after.content}')
+    # Log edited message content
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Edited message content - Before: {before.content}, After: {after.content}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_message_delete(message):
+    # Log deleted message content
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Deleted message content: {message.content}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
 
 @bot.event
 async def on_reaction_add(reaction, user):
-    # Log added reactions in the specified channel
-    log_channel_id = await get_logging_channel(reaction.message.guild)
-    if log_channel_id:
-        log_channel = bot.get_channel(log_channel_id)
-        if log_channel:
-            await log_channel.send(f'**{user} added {reaction.emoji} to a message.**')
+    # Log reacted message content
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Reaction added to message content: {reaction.message.content}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
 
 @bot.event
 async def on_reaction_remove(reaction, user):
-    # Log removed reactions in the specified channel
-    log_channel_id = await get_logging_channel(reaction.message.guild)
-    if log_channel_id:
-        log_channel = bot.get_channel(log_channel_id)
-        if log_channel:
-            await log_channel.send(f'**{user} removed {reaction.emoji} from a message.**')
+    # Log removed reaction from message content
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Reaction removed from message content: {reaction.message.content}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
 
 @bot.event
 async def on_member_join(member):
-    # Log member joins in the specified channel
-    log_channel_id = await get_logging_channel(member.guild)
-    if log_channel_id:
-        log_channel = bot.get_channel(log_channel_id)
-        if log_channel:
-            await log_channel.send(f'**{member.name} has joined the server.**')
+    # Log member join
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Member joined: {member.name}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
 
 @bot.event
 async def on_member_remove(member):
-    # Log member leaves in the specified channel
-    log_channel_id = await get_logging_channel(member.guild)
-    if log_channel_id:
-        log_channel = bot.get_channel(log_channel_id)
-        if log_channel:
-            await log_channel.send(f'**{member.name} has left the server.**')
-
-@bot.event
-async def on_member_ban(guild, user):
-    # Log member bans in the specified channel
-    log_channel_id = await get_logging_channel(guild)
-    if log_channel_id:
-        log_channel = bot.get_channel(log_channel_id)
-        if log_channel:
-            await log_channel.send(f'**{user.name} has been banned from the server.**')
-
-@bot.event
-async def on_member_unban(guild, user):
-    # Log member unbans in the specified channel
-    log_channel_id = await get_logging_channel(guild)
-    if log_channel_id:
-        log_channel = bot.get_channel(log_channel_id)
-        if log_channel:
-            await log_channel.send(f'**{user.name} has been unbanned from the server.**')
+    # Log member leave
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Member left: {member.name}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
 
 @bot.event
 async def on_member_update(before, after):
-    # Log member updates (e.g., role changes) in the specified channel
-    log_channel_id = await get_logging_channel(before.guild)
-    if log_channel_id:
-        log_channel = bot.get_channel(log_channel_id)
-        if log_channel:
-            if before.roles != after.roles:
-                removed_roles = [role.name for role in before.roles if role not in after.roles]
-                added_roles = [role.name for role in after.roles if role not in before.roles]
-                await log_channel.send(f'**{after.name} roles updated:**\nRemoved roles: {removed_roles}\nAdded roles: {added_roles}')
+    # Log member update
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Member update - Before: {before.name}, After: {after.name}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_guild_join(guild):
+    # Log when the bot joins a server
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Bot joined server: {guild.name}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_guild_remove(guild):
+    # Log when the bot is removed from a server
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Bot removed from server: {guild.name}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_guild_update(before, after):
+    # Log server update
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Server update - Before: {before.name}, After: {after.name}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_guild_role_create(role):
+    # Log created role in a server
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Role created in server: {role.name}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_guild_role_delete(role):
+    # Log deleted role in a server
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Role deleted in server: {role.name}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_guild_role_update(before, after):
+    # Log updated role in a server
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Role update in server - Before: {before.name}, After: {after.name}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_member_ban(guild, user):
+    # Log member ban
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Member banned from server: {user.name}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_member_unban(guild, user):
+    # Log member unban
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Member unbanned from server: {user.name}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_voice_state_update(member, before, after):
+    # Log voice state update
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Voice state update - Member: {member.name}, Before: {before.channel}, After: {after.channel}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_user_update(before, after):
+    # Log user update
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"User update - Before: {before.name}, After: {after.name}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_member_presence_update(member, before, after):
+    # Log member presence update
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Member presence update - Member: {member.name}, Before: {before.activities}, After: {after.activities}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+#@bot.event
+#async def on_typing(channel, user, when):
+#    # Log typing event
+#    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+#    if logging_channel:
+#        await logging_channel.send(f"User typing in channel: {user.name}, Channel: {channel.name}")
+#    else:
+#        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_integration_join(integration):
+    # Log when the bot joins as an integration
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Bot joined as integration: {integration.name}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_raw_reaction_add(payload):
+    # Log raw reaction add (includes raw data)
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Raw reaction added to message ID: {payload.message_id}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_raw_reaction_remove(payload):
+    # Log raw reaction remove (includes raw data)
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Raw reaction removed from message ID: {payload.message_id}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_raw_message_delete(payload):
+    # Log raw message delete (includes raw data)
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Raw message deleted from channel ID: {payload.channel_id}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+@bot.event
+async def on_raw_bulk_message_delete(payload):
+    # Log raw bulk message delete (includes raw data)
+    logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
+    if logging_channel:
+        await logging_channel.send(f"Raw bulk message deleted from channel ID: {payload.channel_id}")
+    else:
+        print('Logging channel not found. Please check the channel ID.')
+
+
 
 async def find_and_set_logging_channel(guild):
     # Automatically search for and set up a logging channel
@@ -545,15 +681,16 @@ async def github(ctx, *repository_name):
     except requests.exceptions.HTTPError as http_err:
         await ctx.send(f"Error fetching GitHub repository information: {http_err}")
 
-
-@bot.command()
+@bot.command(brief="Show available commands and their parameters.")
 async def commands(ctx):
-    # Get a list of all commands and their brief descriptions
-    command_list = [f"**{command.name}**" for command in bot.commands]
-
-    # Create an embed with the command list
+    # Create an embed with the command list and parameters
     embed = discord.Embed(title="Available Commands", color=discord.Color.green())
-    embed.description = "\n".join(command_list)
+
+    for command in bot.commands:
+        embed.add_field(name="\u200b", value="\u200b", inline=False)
+        params = ' '.join([f"<{param}>" for param in command.clean_params.keys()])
+        command_info = f"**{command.name} {params}** - {command.brief}"
+        embed.add_field(name=command.name, value=command_info, inline=False)
 
     # Use the display_name attribute from the Member object
     embed.set_footer(text=f"Requested by {ctx.author.display_name}")
