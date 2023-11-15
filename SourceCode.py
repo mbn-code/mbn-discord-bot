@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import asyncio
 import requests
+from googlesearch import search 
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', intents=intents)
@@ -456,6 +457,109 @@ async def ticket(ctx, *args):
     else:
         await ctx.send("Error: Support channel not found. Please contact the server administrator.")
 
+
+
+@bot.command(brief="Fetch information about a specific CVE entry.")
+async def cve(ctx, cve_id):
+    # Construct the URL for the NVD API
+    api_url = f"https://services.nvd.nist.gov/rest/json/cve/{cve_id}"
+
+    try:
+        # Send a request to the NVD API
+        response = requests.get(api_url)
+        response.raise_for_status()  # Raise an error for bad responses
+
+        # Print the entire API response
+        print(response.json())
+
+        # Parse the JSON response
+        cve_info = response.json()
+
+        # Check if the response contains CVE information
+        if 'result' in cve_info and 'CVE_Items' in cve_info['result']:
+            # Extract relevant information
+            cve_item = cve_info['result']['CVE_Items'][0]['cve']
+            cve_description = cve_item['description']['description_data'][0]['value']
+
+            # Create an embed with CVE information
+            embed = discord.Embed(title=f"CVE Information: {cve_id}", color=discord.Color.gold())
+            embed.add_field(name="Description", value=cve_description, inline=False)
+            embed.set_footer(text=f"Requested by {ctx.author.display_name}", icon_url=ctx.author.avatar_url)
+
+            # Send the embed message
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send(f"No information found for CVE ID: {cve_id}")
+
+    except requests.exceptions.HTTPError as http_err:
+        if response.status_code == 404:
+            await ctx.send(f"No information found for CVE ID: {cve_id}")
+            await ctx.send(f"Error fetching CVE information: {http_err}")
+        else:
+            await ctx.send(f"Error fetching CVE information: {http_err}")
+
+@bot.command(brief="Search Stack Overflow for a programming question.")
+async def stackoverflow(ctx, *question):
+    question = ' '.join(question)
+    try:
+        # Use the googlesearch library to search Stack Overflow
+        results = list(search(f"{question} site:stackoverflow.com"))
+
+        if results:
+            # Display the first Stack Overflow result in a Discord message
+            await ctx.send(f"Stack Overflow result for '{question}':\n{results[0]}")
+        else:
+            await ctx.send(f"No Stack Overflow results found for '{question}'")
+
+    except Exception as e:
+        await ctx.send(f"Error searching Stack Overflow: {e}")
+
+@bot.command(brief="Search GitHub for a repository and display the one with the most stars.")
+async def github(ctx, *repository_name):
+    repository_name = ' '.join(repository_name)
+    try:
+        # Construct the URL for the GitHub search API
+        github_api_url = f"https://api.github.com/search/repositories?q={repository_name}&sort=stars&order=desc"
+
+        # Send a request to the GitHub API
+        response = requests.get(github_api_url)
+        response.raise_for_status()  # Raise an error for bad responses
+
+        # Parse the JSON response
+        github_results = response.json()
+
+        # Check if there are any search results
+        if 'items' in github_results and github_results['items']:
+            # Extract information about the repository with the most stars
+            top_repo = github_results['items'][0]
+            repo_name = top_repo['name']
+            repo_url = top_repo['html_url']
+            stars = top_repo['stargazers_count']
+
+            # Display information about the top repository in a Discord message
+            await ctx.send(f"Top GitHub repository for '{repository_name}':\n"
+                           f"Name: {repo_name}\nStars: {stars}\nURL: {repo_url}")
+        else:
+            await ctx.send(f"No GitHub repositories found for '{repository_name}'")
+
+    except requests.exceptions.HTTPError as http_err:
+        await ctx.send(f"Error fetching GitHub repository information: {http_err}")
+
+
+@bot.command()
+async def commands(ctx):
+    # Get a list of all commands and their brief descriptions
+    command_list = [f"**{command.name}**" for command in bot.commands]
+
+    # Create an embed with the command list
+    embed = discord.Embed(title="Available Commands", color=discord.Color.green())
+    embed.description = "\n".join(command_list)
+
+    # Use the display_name attribute from the Member object
+    embed.set_footer(text=f"Requested by {ctx.author.display_name}")
+
+    # Send the embed message
+    await ctx.send(embed=embed)
 
 # Run the bot with your token
 def read_token():
