@@ -72,6 +72,18 @@ async def on_reaction_remove(reaction, user):
         print('Logging channel not found. Please check the channel ID.')
 
 @bot.event
+async def on_message(message):
+    # Check if the message has a gif
+    if message.attachments:
+        for attachment in message.attachments:
+            if attachment.filename.endswith('.gif'):
+                # Send a request to the NSFW detection API
+                response = requests.post('http://localhost:8000/predict', json={'url': attachment.url})
+                is_nsfw = response.json()['is_nsfw']
+                if is_nsfw:
+                    await message.delete()
+                    await message.channel.send(f"{message.author.mention}, your message was deleted because it contained NSFW content.")
+@bot.event
 async def on_member_join(member):
     # Log member join
     logging_channel = bot.get_channel(LOGGING_CHANNEL_ID)
